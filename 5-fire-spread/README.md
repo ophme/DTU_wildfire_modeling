@@ -1,42 +1,57 @@
-# Wildfire Simulation Repository
+# Fire Spread Simulation Workflow
 
-This repository contains a set of scripts designed to run ForeFire simulations iteratively. The main script `main.py` coordinates the execution of all the scripts, simulating fire spread over eight iterations (3h time steps over a day).
+This workflow simulates fire spread using historical fire data, wind forecasts, WindNinja, and ForeFire. It is organized into three main steps:
 
-## Files
+---
 
-### 1. **main.py**
-   - This is the main script integrating all the other functions.
-   - It runs eight different fire simulations iteratively (from `t0` to `t7`).
-   - **User Input**: The script prompts for wind speed, wind direction, and roughness type (as defined in WindNinja).
-   - **Process**:
-     - For each iteration, the landcover (fuel map) is updated to reflect the burned area.
-     - The updated landcover is used for the following simulation.
+##  1. `1-pre-process/`
 
-### 2. **extend.py**
-   - Generates the `elevation.tif` and `land_cover.tif` center in the lat/lon introduced by the user.
+In this step, we prepare inputs for the simulation:
+
+- **Extract Wind Forecasts:**  
+  We extract 3-hourly wind forecasts for the fire location for the next 24 hours. These will be used to drive the fire spread simulation.
+
+- **Historical Fire Data:**  
+  We gather historical fire distributions (burned area and timing). This data is used to:
+  - Define the **temporal duration** of the fire simulations.
+  - Limit the **maximum spread** based on realistic fire sizes.
+
+Outputs from this step are used to initialize and constrain the fire simulation.
+
+---
+
+##  2. `2-forefire/`
+
+This is the core simulation step:
+
+- **Wind Downscaling (WindNinja):**  
+  Wind forecasts are downscaled to high-resolution terrain using WindNinja for better accuracy in local wind conditions.
+
+- **Fire Spread Simulation (ForeFire):**  
+  ForeFire is run using the downscaled wind and constraints from the pre-processing step. It models how the fire spreads through space and time.
+
+---
+
+##  3. `3-process-results/`
+
+In the final step, we collect and annotate the simulation results:
+
+- **Merge Simulation Outputs:**  
+  All fire spread simulation outputs are merged into a single shapefile.
+
+- **Add Event Metadata:**  
+  Each fire polygon is annotated with the date of the event, representing when the fire occurred.
+
+---
 
 
-### 3. **ff_file_generator.py**
-   - Creates a `.ff` file required for running each ForeFire simulation.
-  
+---
 
-### 4. **genWindNinjaFile.py**
-   - Generates the `.cfg` file required to run WindNinja.
-   - The `.cfg` file contains configuration parameters such as wind speed, direction, and roughness type.
+##  Notes
 
-### 5. **ffgeojsonTojson.py**
-   - Converts the output from ForeFire (a `.ffgeojson` format) into a simpler `.geojson` format.
+- Ensure all dependencies for WindNinja and ForeFire are installed and available in your environment.
+- Wind data input and historical fire data must be correctly formatted before starting the simulation.
 
-## Workflow
-1. The user runs `main.py` and inputs the required parameters.
-2. The script iterates through eight simulations, updating the fuel map with each iteration.
-3. During each simulation:
-   - `genWindNinjaFile.py` generates the configuration file for WindNinja.
-   - `ff_file_generator.py` creates the `.ff` file for the current iteration.
-4. After each simulation, the output is processed using `ffgeojsonTojson.py`.
-5. The cycle repeats for each of the eight time steps, producing a complete set of results.
 
-## Requirements
-- **Python 3.6+**
-- **WindNinja** installed and configured.
-- **ForeFire** installed and configured.
+
+
